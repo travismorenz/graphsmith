@@ -56,6 +56,7 @@ class Graph {
     addNode(x, y) {
         const n = new Node(this.nextId, x, y);
         this.nodes.push(n);
+        this.selected = [n];
         this.nextId++;
         this.draw();
     }
@@ -80,7 +81,7 @@ class Graph {
         this.edges = this.edges.filter((edge) =>
             selectedIds.every(
                 (id) =>
-                    id !== edge.id || id !== edge.start.id || id !== edge.end.id
+                    id !== edge.id && id !== edge.start.id && id !== edge.end.id
             )
         );
         this.selected = [];
@@ -137,15 +138,31 @@ paperEl.addEventListener("click", (e) => {
 
     if (!selection) {
         graph.clearSelected();
-    } else if (e.shiftKey) {
+        return;
+    }
+
+    if (e.shiftKey) {
         graph.addSelection(selection);
-    } else if (e.altKey && selection instanceof Node) {
+        return;
+    }
+
+    if (e.altKey && selection instanceof Node) {
         const selectedNodes = graph.selected.filter(
             (item) => item instanceof Node
         );
         selectedNodes.forEach((node) => graph.addEdge(node, selection));
-    } else {
-        graph.clearSelected();
         graph.addSelection(selection);
+        return;
+    }
+
+    graph.clearSelected();
+    graph.addSelection(selection);
+});
+
+document.addEventListener("keyup", (e) => {
+    switch (e.key) {
+        case "Backspace":
+            graph.deleteSelected();
+            break;
     }
 });
