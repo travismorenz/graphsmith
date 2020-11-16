@@ -7,18 +7,21 @@
     }
 
     function getDistEdgePoint(edge, point) {
-        // TODO: fix so it uses line segment, not line
-        const { start, end } = edge;
-        const deltaY = end.y - start.y;
-        const deltaX = end.x - start.x;
-        const num = Math.abs(
-            deltaY * point.x -
-                deltaX * point.y +
-                end.x * start.y -
-                end.y * start.x
-        );
-        const dist = Math.hypot(deltaY, deltaX);
-        return num / dist;
+        var dx = edge.end.x - edge.start.x;
+        var dy = edge.end.y - edge.start.y;
+        var l2 = dx * dx + dy * dy;
+
+        if (l2 == 0) return getDistPoints(point, edge.start);
+
+        var t =
+            ((point.x - edge.start.x) * dx + (point.y - edge.start.y) * dy) /
+            l2;
+        t = Math.max(0, Math.min(1, t));
+
+        return getDistPoints(point, {
+            x: edge.start.x + t * dx,
+            y: edge.start.y + t * dy,
+        });
     }
 
     function getMouseCoords(e) {
