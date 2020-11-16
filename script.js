@@ -119,6 +119,12 @@ class Graph {
             paper.circle(x, y, radius).attr("fill", fill);
         });
     }
+
+    load(nodes, edges, nextId) {
+        this.nodes = nodes;
+        this.edges = edges;
+        this.nextId = nextId;
+    }
 }
 
 const $window = $(window);
@@ -129,6 +135,14 @@ const graph = new Graph(paper);
 let dragging = false;
 
 $window.resize(() => paper.setSize($window.width(), $window.height()));
+
+$window.on("keyup", (e) => {
+    switch (e.key) {
+        case "Backspace":
+            graph.deleteSelected();
+            break;
+    }
+});
 
 $paper.on("mousedown", (downE) => {
     const { x: startX, y: startY } = getMouseCoords(downE);
@@ -181,10 +195,41 @@ $paper.on("dblclick", (e) => {
 
 $paper.on("mouseup", (e) => $paper.off("mousemove"));
 
-document.addEventListener("keyup", (e) => {
-    switch (e.key) {
-        case "Backspace":
-            graph.deleteSelected();
-            break;
-    }
+$("#save").click(() => {
+    let { nodes, edges, nextId } = graph;
+    const filename = window.prompt("Enter the graph name: ");
+    const json = JSON.stringify({ nodes, edges, nextId });
+    const blob = new Blob([json], { type: "application/json" });
+    window.saveAs(blob, `${filename}.json`);
+});
+
+$("#load").click(() => {
+    $("#file-input").click();
+});
+
+$("#file-input").change(() => {
+    const file = $("#file-input").prop("files")[0];
+    const reader = new FileReader();
+    reader.readAsText(file);
+
+    reader.onload = function () {
+        try {
+            let { nodes, edges, nextId } = JSON.parse(reader.result);
+            nodes = nodes.map((node) => Object.assign(new Node(), node));
+            edges.forEach((edge) => {
+                edge.start = nodes.find((node) => edge.start.id === node.id);
+                edge.end = nodes.find((node) => edge.end.id === node.id);
+            });
+            edges = edges.map((edge) => Object.assign(new Edge(), edge));
+            graph.load(nodes, edges, nextId);
+            graph.draw();
+        } catch (e) {
+            console.log(e);
+            alert("JSON parsing failed for that document");
+        }
+    };
+
+    reader.onerror = function () {
+        alert("There was an error loading your file");
+    };
 });
