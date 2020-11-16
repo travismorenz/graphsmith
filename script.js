@@ -1,4 +1,3 @@
-// TODO: colors
 // TODO: loops
 // TODO: parallel edges
 
@@ -6,6 +5,20 @@
     /**************************************************************************
      * Helpers
      **************************************************************************/
+
+    function getKeyColor(key) {
+        const colors = {
+            b: "blue",
+            g: "green",
+            o: "orange",
+            p: "purple",
+            r: "red",
+            x: "black",
+            y: "yellow",
+        };
+        return colors[key];
+    }
+
     function getDistPoints(point1, point2) {
         return Math.hypot(point2.y - point1.y, point2.x - point1.x);
     }
@@ -122,6 +135,11 @@
             this.draw();
         }
 
+        setSelectedColor(color) {
+            this.selected.forEach((item) => (item.color = color));
+            this.draw();
+        }
+
         getSelection(x, y) {
             const node = this.nodes.find(
                 (node) => getDistPoints({ x, y }, node) <= node.radius
@@ -141,7 +159,7 @@
                     .attr("stroke-width", strokeWidth)
                     .attr("stroke", color);
                 if (this.selected.includes(edge)) {
-                    p.glow({ color: "black", width: 20 });
+                    p.glow({ color: "black", width: 20, opacity: 0.3 });
                 }
             });
             this.nodes.forEach((node) => {
@@ -151,7 +169,7 @@
                     .attr("fill", color)
                     .attr("stroke-width", 0);
                 if (this.selected.includes(node)) {
-                    c.glow({ color: "black", width: 20 });
+                    c.glow({ color: "black", width: 20, opacity: 0.3 });
                 }
             });
         }
@@ -174,6 +192,11 @@
             case "Backspace":
                 graph.deleteSelected();
                 break;
+            default:
+                const color = getKeyColor(e.key);
+                if (color) {
+                    graph.setSelectedColor(color);
+                }
         }
     });
 
