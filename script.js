@@ -28,9 +28,9 @@ class Node {
         this.radius = 30;
     }
 
-    move(direction, distance) {
-        this.x += direction.x * distance;
-        this.y += direction.y * distance;
+    move(diffX, diffY) {
+        this.x += diffX;
+        this.y += diffY;
     }
 }
 
@@ -121,43 +121,62 @@ class Graph {
     }
 }
 
-const paperEl = document.querySelector("#paper");
+const paperEl = $("#paper");
 const paper = Raphael("paper", 800, 800);
 const graph = new Graph(paper);
 
-paperEl.addEventListener("dblclick", (e) => {
-    const { x, y } = getMouseCoords(e);
-    graph.addNode(x, y);
-});
+let dragging = false;
 
-paperEl.addEventListener("click", (e) => {
-    const { x, y } = getMouseCoords(e);
-    const selection = graph.getSelection(x, y);
-
-    if (selection && graph.selected.includes(selection)) return;
+paperEl.on("mousedown", (downE) => {
+    const { x: startX, y: startY } = getMouseCoords(downE);
+    const selection = graph.getSelection(startX, startY);
+    dragging = false;
 
     if (!selection) {
         graph.clearSelected();
         return;
     }
 
-    if (e.shiftKey) {
-        graph.addSelection(selection);
-        return;
-    }
-
-    if (e.altKey && selection instanceof Node) {
+    if (downE.altKey && selection instanceof Node) {
         const selectedNodes = graph.selected.filter(
             (item) => item instanceof Node
         );
         selectedNodes.forEach((node) => graph.addEdge(node, selection));
+        graph.clearSelected();
         graph.addSelection(selection);
         return;
     }
 
-    graph.clearSelected();
-    graph.addSelection(selection);
+    const alreadySelected = graph.selected.includes(selection);
+    if (!alreadySelected) {
+        if (!downE.shiftKey) graph.clearSelected();
+        graph.addSelection(selection);
+    }
+
+    let lastX = startX;
+    let lastY = startY;
+    paperEl.on("mousemove", (moveE) => {
+        const { x, y } = getMouseCoords(moveE);
+
+        if (Math.abs(startX - x) > 5 || Math.abs(startY - y) > 5) {
+            dragging = true;
+            const selectedNodes = graph.selected.filter(
+                (item) => item instanceof Node
+            );
+            selectedNodes.forEach((node) => node.move(x - lastX, y - lastY));
+            graph.draw();
+            lastX = x;
+            lastY = y;
+        }
+    });
 });
+
+paperEl.on("dblclick", (e) => {
+    const { x, y } = getMouseCoords(e);
+    graph.addNode(x, y);
+});
+
+paperEl.on("mouseup", (e) => paperEl.off("mousemove"));
 
 document.addEventListener("keyup", (e) => {
     switch (e.key) {
