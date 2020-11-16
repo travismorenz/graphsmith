@@ -121,13 +121,16 @@ class Graph {
     }
 }
 
-const paperEl = $("#paper");
-const paper = Raphael("paper", 800, 800);
+const $window = $(window);
+const $paper = $("#paper");
+const paper = Raphael("paper", $window.width(), $window.height());
 const graph = new Graph(paper);
 
 let dragging = false;
 
-paperEl.on("mousedown", (downE) => {
+$window.resize(() => paper.setSize($window.width(), $window.height()));
+
+$paper.on("mousedown", (downE) => {
     const { x: startX, y: startY } = getMouseCoords(downE);
     const selection = graph.getSelection(startX, startY);
     dragging = false;
@@ -155,7 +158,7 @@ paperEl.on("mousedown", (downE) => {
 
     let lastX = startX;
     let lastY = startY;
-    paperEl.on("mousemove", (moveE) => {
+    $paper.on("mousemove", (moveE) => {
         const { x, y } = getMouseCoords(moveE);
 
         if (Math.abs(startX - x) > 5 || Math.abs(startY - y) > 5) {
@@ -171,12 +174,12 @@ paperEl.on("mousedown", (downE) => {
     });
 });
 
-paperEl.on("dblclick", (e) => {
+$paper.on("dblclick", (e) => {
     const { x, y } = getMouseCoords(e);
     graph.addNode(x, y);
 });
 
-paperEl.on("mouseup", (e) => paperEl.off("mousemove"));
+$paper.on("mouseup", (e) => $paper.off("mousemove"));
 
 document.addEventListener("keyup", (e) => {
     switch (e.key) {
