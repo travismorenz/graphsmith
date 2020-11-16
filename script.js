@@ -141,10 +141,15 @@
         }
 
         getSelection(x, y) {
-            const node = this.nodes.find(
+            // Reverse the nodes/edges so that more recent elements are prioritized b/c they are
+            // physically above older elements
+            const revNodes = [...this.nodes].reverse();
+            const revEdges = [...this.edges].reverse();
+
+            const node = revNodes.find(
                 (node) => getDistPoints({ x, y }, node) <= node.radius
             );
-            const edge = this.edges.find(
+            const edge = revEdges.find(
                 (edge) => getDistEdgePoint(edge, { x, y }) <= edge.range
             );
             return node || edge;
