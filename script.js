@@ -1,3 +1,7 @@
+// TODO: colors
+// TODO: loops
+// TODO: parallel edges
+
 (() => {
     /**************************************************************************
      * Helpers
@@ -40,6 +44,7 @@
             this.x = x;
             this.y = y;
             this.radius = 30;
+            this.color = "black";
         }
 
         move(diffX, diffY) {
@@ -55,6 +60,7 @@
             this.end = endNode;
             this.range = 10;
             this.strokeWidth = 5;
+            this.color = "black";
         }
     }
 
@@ -129,17 +135,24 @@
         draw() {
             this.paper.clear();
             this.edges.forEach((edge) => {
-                const { start, end, strokeWidth } = edge;
-                const stroke = this.selected.includes(edge) ? "blue" : "black";
-                paper
+                const { start, end, strokeWidth, color } = edge;
+                const p = paper
                     .path(`M${start.x},${start.y}L${end.x},${end.y}`)
                     .attr("stroke-width", strokeWidth)
-                    .attr("stroke", stroke);
+                    .attr("stroke", color);
+                if (this.selected.includes(edge)) {
+                    p.glow({ color: "black", width: 20 });
+                }
             });
             this.nodes.forEach((node) => {
-                const { x, y, radius } = node;
-                const fill = this.selected.includes(node) ? "blue" : "black";
-                paper.circle(x, y, radius).attr("fill", fill);
+                const { x, y, radius, color } = node;
+                const c = paper
+                    .circle(x, y, radius)
+                    .attr("fill", color)
+                    .attr("stroke-width", 0);
+                if (this.selected.includes(node)) {
+                    c.glow({ color: "black", width: 20 });
+                }
             });
         }
     }
