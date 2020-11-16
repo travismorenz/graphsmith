@@ -1,9 +1,13 @@
 (() => {
-    function distancePoints(point1, point2) {
+    /**************************************************************************
+     * Helpers
+     **************************************************************************/
+    function getDistPoints(point1, point2) {
         return Math.hypot(point2.y - point1.y, point2.x - point1.x);
     }
 
-    function distanceEdgePoint(edge, point) {
+    function getDistEdgePoint(edge, point) {
+        // TODO: fix so it uses line segment, not line
         const { start, end } = edge;
         const deltaY = end.y - start.y;
         const deltaX = end.x - start.x;
@@ -24,6 +28,9 @@
         return { x, y };
     }
 
+    /**************************************************************************
+     * Classes
+     **************************************************************************/
     class Node {
         constructor(id, x, y) {
             this.id = id;
@@ -57,6 +64,12 @@
             this.nextId = 0;
         }
 
+        load(nodes, edges, nextId) {
+            this.nodes = nodes;
+            this.edges = edges;
+            this.nextId = nextId;
+        }
+
         addNode(x, y) {
             const n = new Node(this.nextId, x, y);
             this.nodes.push(n);
@@ -82,6 +95,7 @@
             this.nodes = this.nodes.filter(
                 (node) => !selectedIds.includes(node.id)
             );
+            // Edges should be removed if they were selected or their start/end node was selected
             this.edges = this.edges.filter((edge) =>
                 selectedIds.every(
                     (id) =>
@@ -101,10 +115,10 @@
 
         getSelection(x, y) {
             const node = this.nodes.find(
-                (node) => distancePoints({ x, y }, node) <= node.radius
+                (node) => getDistPoints({ x, y }, node) <= node.radius
             );
             const edge = this.edges.find(
-                (edge) => distanceEdgePoint(edge, { x, y }) <= edge.range
+                (edge) => getDistEdgePoint(edge, { x, y }) <= edge.range
             );
             return node || edge;
         }
@@ -125,23 +139,20 @@
                 paper.circle(x, y, radius).attr("fill", fill);
             });
         }
-
-        load(nodes, edges, nextId) {
-            this.nodes = nodes;
-            this.edges = edges;
-            this.nextId = nextId;
-        }
     }
 
+    /**************************************************************************
+     * Main
+     **************************************************************************/
     const $window = $(window);
     const $paper = $("#paper");
     const paper = Raphael("paper", $window.width(), $window.height());
     const graph = new Graph(paper);
 
-    let dragging = false;
-
+    // Resize the canvas on window resize
     $window.resize(() => paper.setSize($window.width(), $window.height()));
 
+    // Single key press actions
     $window.on("keyup", (e) => {
         switch (e.key) {
             case "Backspace":
@@ -150,16 +161,20 @@
         }
     });
 
+    // IMPORTANT handler responsible for selection, edge creation, and movement
     $paper.on("mousedown", (downE) => {
         const { x: startX, y: startY } = getMouseCoords(downE);
-        const selection = graph.getSelection(startX, startY);
-        dragging = false;
 
+        // Get the element (edge/node) that the mouse is over
+        const selection = graph.getSelection(startX, startY);
+
+        // Early exit
         if (!selection) {
             graph.clearSelected();
             return;
         }
 
+        // Edge creation
         if (downE.altKey && selection instanceof Node) {
             const selectedNodes = graph.selected.filter(
                 (item) => item instanceof Node
@@ -170,39 +185,49 @@
             return;
         }
 
+        // Selection logic
         const alreadySelected = graph.selected.includes(selection);
         if (!alreadySelected) {
             if (!downE.shiftKey) graph.clearSelected();
             graph.addSelection(selection);
         }
 
+        /******************
+         * Dragging logic
+         ******************/
+
+        // Keep track of the last position the mouse had
         let lastX = startX;
         let lastY = startY;
+
         $paper.on("mousemove", (moveE) => {
             const { x, y } = getMouseCoords(moveE);
 
-            if (Math.abs(startX - x) > 5 || Math.abs(startY - y) > 5) {
-                dragging = true;
-                const selectedNodes = graph.selected.filter(
-                    (item) => item instanceof Node
-                );
-                selectedNodes.forEach((node) =>
-                    node.move(x - lastX, y - lastY)
-                );
-                graph.draw();
-                lastX = x;
-                lastY = y;
-            }
+            // If the drag was <= 5 pixels then ignore it by exiting b/c lot of clicks happen while
+            // the mouse is moving slightly
+            if (Math.abs(startX - x) <= 5 && Math.abs(startY - y) <= 5) return;
+
+            // Move the nodes using the difference between the current mouse position and the last
+            const selectedNodes = graph.selected.filter(
+                (item) => item instanceof Node
+            );
+            selectedNodes.forEach((node) => node.move(x - lastX, y - lastY));
+            graph.draw();
+            lastX = x;
+            lastY = y;
         });
     });
 
+    // Adding new nodes
     $paper.on("dblclick", (e) => {
         const { x, y } = getMouseCoords(e);
         graph.addNode(x, y);
     });
 
+    // Stop handling mousemove when the mouse is no longer clicked
     $paper.on("mouseup", (e) => $paper.off("mousemove"));
 
+    // Save graph to JSON
     $("#save").click(() => {
         let { nodes, edges, nextId } = graph;
         const filename = window.prompt("Enter the graph name: ");
@@ -211,10 +236,12 @@
         window.saveAs(blob, `${filename}.json`);
     });
 
+    // Trigger the file input on Load button click
     $("#load").click(() => {
         $("#file-input").click();
     });
 
+    // Load a JSON file
     $("#file-input").change(() => {
         const file = $("#file-input").prop("files")[0];
         const reader = new FileReader();
@@ -223,14 +250,22 @@
         reader.onload = function () {
             try {
                 let { nodes, edges, nextId } = JSON.parse(reader.result);
+
+                // Reassign the node objects from the JSON to class Node
                 nodes = nodes.map((node) => Object.assign(new Node(), node));
+
+                // Set the edge start/ends to reference the nodes we just initialized
                 edges.forEach((edge) => {
                     edge.start = nodes.find(
                         (node) => edge.start.id === node.id
                     );
                     edge.end = nodes.find((node) => edge.end.id === node.id);
                 });
+
+                // Reassing the edge objects to class Edge
                 edges = edges.map((edge) => Object.assign(new Edge(), edge));
+
+                // Load everything
                 graph.load(nodes, edges, nextId);
                 graph.draw();
             } catch (e) {
