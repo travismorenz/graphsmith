@@ -41,6 +41,19 @@
         });
     }
 
+    function getLoopCenter(edge, midpoint) {
+        const { start } = edge;
+        const x = start.x;
+        const y = start.y;
+        const dx = x - midpoint.x;
+        const dy = y - midpoint.y;
+        const distance = getDistPoints(midpoint, { x, y });
+        return {
+            x: (dx / distance) * start.radius + x,
+            y: (dy / distance) * start.radius + y,
+        };
+    }
+
     function getMouseCoords(e) {
         const rect = e.currentTarget.getBoundingClientRect();
         const x = e.clientX - rect.left;
@@ -155,9 +168,26 @@
             return node || edge;
         }
 
-        draw() {
-            this.paper.clear();
-            this.edges.forEach((edge) => {
+        drawEdges() {
+            // Draw loops
+            const loops = this.edges.filter(({ start, end }) => start === end);
+            const midpoint = {
+                x: this.paper.width / 2,
+                y: this.paper.height / 2,
+            };
+            loops.forEach((edge) => {
+                const { x, y } = getLoopCenter(edge, midpoint);
+                const c = paper
+                    .circle(x, y, edge.start.radius)
+                    .attr("fill", "white")
+                    .attr("stroke-width", edge.strokeWidth);
+            });
+
+            // Draw normal edges
+            const normalEdges = this.edges.filter(
+                (edge) => !loops.includes(edge)
+            );
+            normalEdges.forEach((edge) => {
                 const { start, end, strokeWidth, color } = edge;
                 const p = paper
                     .path(`M${start.x},${start.y}L${end.x},${end.y}`)
@@ -167,6 +197,11 @@
                     p.glow({ color: "black", width: 20, opacity: 0.3 });
                 }
             });
+        }
+
+        draw() {
+            this.paper.clear();
+            this.drawEdges();
             this.nodes.forEach((node) => {
                 const { x, y, radius, color } = node;
                 const c = paper
