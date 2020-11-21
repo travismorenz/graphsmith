@@ -1,4 +1,3 @@
-// TODO: loops
 // TODO: parallel edges
 
 (() => {
@@ -162,9 +161,29 @@
             const node = revNodes.find(
                 (node) => getDistPoints({ x, y }, node) <= node.radius
             );
-            const edge = revEdges.find(
-                (edge) => getDistEdgePoint(edge, { x, y }) <= edge.range
-            );
+
+            const midpoint = {
+                x: this.paper.width / 2,
+                y: this.paper.height / 2,
+            };
+            const edge = revEdges.find((edge) => {
+                // Handle loops
+                if (edge.start === edge.end) {
+                    const loop = getLoopCenter(edge, midpoint);
+                    return getDistPoints({ x, y }, loop) <= edge.start.radius;
+                }
+
+                // TODO:
+                // // Handle parallel edges
+                // const parallelCount = revEdges.reduce((count, edge2) => {
+                //     return edge.start === edge2.start && edge.end == edge2.end
+                //         ? count + 1
+                //         : count;
+                // });
+                // if (parallelCount > 1) {
+                // }
+                return getDistEdgePoint(edge, { x, y }) <= edge.range;
+            });
             return node || edge;
         }
 
@@ -176,11 +195,16 @@
                 y: this.paper.height / 2,
             };
             loops.forEach((edge) => {
+                const { color, start, strokeWidth } = edge;
                 const { x, y } = getLoopCenter(edge, midpoint);
                 const c = paper
-                    .circle(x, y, edge.start.radius)
+                    .circle(x, y, start.radius)
                     .attr("fill", "white")
-                    .attr("stroke-width", edge.strokeWidth);
+                    .attr("stroke", color)
+                    .attr("stroke-width", strokeWidth);
+                if (this.selected.includes(edge)) {
+                    c.glow({ color: "black", width: 20, opacity: 0.3 });
+                }
             });
 
             // Draw normal edges
