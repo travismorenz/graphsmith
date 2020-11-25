@@ -96,6 +96,7 @@
             this.edges = [];
             this.selected = [];
             this.nextId = 0;
+            this.draw();
         }
 
         load(nodes, edges, nextId) {
@@ -236,6 +237,12 @@
                     c.glow({ color: "black", width: 20, opacity: 0.3 });
                 }
             });
+            this.fillStats();
+        }
+
+        fillStats() {
+            $("#n").html(`n=${this.nodes.length}`);
+            $("#m").html(`m=${this.edges.length}`);
         }
     }
 
@@ -334,6 +341,7 @@
     $("#save").click(() => {
         let { nodes, edges, nextId } = graph;
         const filename = window.prompt("Enter the graph name: ");
+        if (!filename) return;
         const json = JSON.stringify({ nodes, edges, nextId });
         const blob = new Blob([json], { type: "application/json" });
         window.saveAs(blob, `${filename}.json`);

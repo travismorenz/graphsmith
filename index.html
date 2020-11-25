@@ -7,13 +7,20 @@
         <link rel="stylesheet" href="index.css" />
     </head>
     <body>
-        <header>
+        <ul>
+            <li id="save">Save</li>
+            <li id="load">Load</li>
+            <li id="help">Help</li>
+        </ul>
+        <div class="stats">
             <div>
-                <button id="save">Save</button>
-                <button id="load">Load</button>
-                <button id="help">Help</button>
+                <span id="n"></span>
+                <span id="m"></span>
             </div>
-        </header>
+            <details>
+                <summary>More stats</summary>
+            </details>
+        </div>
         <div id="paper"></div>
         <input id="file-input" type="file" style="visibility: hidden" />
         <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.0/FileSaver.min.js"></script>
