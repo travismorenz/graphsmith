@@ -1,4 +1,7 @@
 // TODO: parallel edges
+// TODO: directed toggle
+// TODO: eigenvalue/adjacency matrix
+// TODO: bipartite
 
 (() => {
     /**************************************************************************
