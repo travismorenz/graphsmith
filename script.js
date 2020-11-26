@@ -43,13 +43,13 @@
         });
     }
 
-    function getLoopCenter(edge, midpoint) {
+    function getLoopCenter(edge, pageCenter) {
         const { start } = edge;
         const x = start.x;
         const y = start.y;
-        const dx = x - midpoint.x;
-        const dy = y - midpoint.y;
-        const distance = getDistPoints(midpoint, { x, y });
+        const dx = x - pageCenter.x;
+        const dy = y - pageCenter.y;
+        const distance = getDistPoints(pageCenter, { x, y });
         return {
             x: (dx / distance) * start.radius + x,
             y: (dy / distance) * start.radius + y,
@@ -166,14 +166,14 @@
                 (node) => getDistPoints({ x, y }, node) <= node.radius
             );
 
-            const midpoint = {
+            const pageCenter = {
                 x: this.paper.width / 2,
                 y: this.paper.height / 2,
             };
             const edge = revEdges.find((edge) => {
                 // Handle loops
                 if (edge.start === edge.end) {
-                    const loop = getLoopCenter(edge, midpoint);
+                    const loop = getLoopCenter(edge, pageCenter);
                     return getDistPoints({ x, y }, loop) <= edge.start.radius;
                 }
 
@@ -194,13 +194,13 @@
         drawEdges() {
             // Draw loops
             const loops = this.edges.filter(({ start, end }) => start === end);
-            const midpoint = {
+            const pageCenter = {
                 x: this.paper.width / 2,
                 y: this.paper.height / 2,
             };
             loops.forEach((edge) => {
                 const { color, start, strokeWidth } = edge;
-                const { x, y } = getLoopCenter(edge, midpoint);
+                const { x, y } = getLoopCenter(edge, pageCenter);
                 const c = paper
                     .circle(x, y, start.radius)
                     .attr("fill", "white")
