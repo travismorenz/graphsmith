@@ -63,6 +63,36 @@
         return { x, y };
     }
 
+    function getParallelPoints(edge, height) {
+        let { start, end } = edge;
+        const dist = getDistPoints(start, end);
+
+        // Unit vector
+        const uv = {
+            x: (end.x - start.x) / dist,
+            y: (end.y - start.y) / dist,
+        };
+
+        // Make perpendicular
+        let t = uv.x;
+        uv.x = uv.y;
+        uv.y = t * -1;
+
+        const mid = {
+            x: (end.x + start.x) / 2 + uv.x * height,
+            y: (end.y + start.y) / 2 + uv.y * height,
+        };
+        start = {
+            x: start.x + uv.x * height,
+            y: start.y + uv.y * height,
+        };
+        end = {
+            x: start.x + uv.x * height,
+            y: start.y + uv.y * height,
+        };
+        return { mid, start, end };
+    }
+
     /**************************************************************************
      * Classes
      **************************************************************************/
@@ -176,16 +206,6 @@
                     const loop = getLoopCenter(edge, pageCenter);
                     return getDistPoints({ x, y }, loop) <= edge.start.radius;
                 }
-
-                // TODO:
-                // // Handle parallel edges
-                // const parallelCount = revEdges.reduce((count, edge2) => {
-                //     return edge.start === edge2.start && edge.end == edge2.end
-                //         ? count + 1
-                //         : count;
-                // });
-                // if (parallelCount > 1) {
-                // }
                 return getDistEdgePoint(edge, { x, y }) <= edge.range;
             });
             return node || edge;
@@ -201,7 +221,7 @@
             loops.forEach((edge) => {
                 const { color, start, strokeWidth } = edge;
                 const { x, y } = getLoopCenter(edge, pageCenter);
-                const c = paper
+                const c = this.paper
                     .circle(x, y, start.radius)
                     .attr("fill", "white")
                     .attr("stroke", color)
@@ -211,20 +231,54 @@
                 }
             });
 
-            // Draw normal edges
+            // Filter out the loops
             const normalEdges = this.edges.filter(
                 (edge) => !loops.includes(edge)
             );
-            normalEdges.forEach((edge) => {
-                const { start, end, strokeWidth, color } = edge;
-                const p = paper
-                    .path(`M${start.x},${start.y}L${end.x},${end.y}`)
-                    .attr("stroke-width", strokeWidth)
-                    .attr("stroke", color);
-                if (this.selected.includes(edge)) {
-                    p.glow({ color: "black", width: 20, opacity: 0.3 });
+
+            // Get the count for each edge spanning the two given points
+            const counts = {};
+            for (let edge of normalEdges) {
+                const { start, end } = edge;
+                const key = [start.id, end.id].sort((a, b) => a - b).join("/");
+                if (!counts[key]) {
+                    counts[key] = [edge, 0];
                 }
-            });
+                counts[key][1]++;
+            }
+
+            for (let [edge, count] of Object.values(counts)) {
+                const { start, end, strokeWidth, color } = edge;
+                let p;
+
+                // Draw the middle line when edge count is odd
+                if (count % 2 !== 0) {
+                    p = this.paper
+                        .path(`M${start.x},${start.y}L${end.x},${end.y}`)
+                        .attr("stroke-width", strokeWidth)
+                        .attr("stroke", color);
+                    if (this.selected.includes(edge)) {
+                        p.glow({ color: "black", width: 20, opacity: 0.3 });
+                    }
+                    count -= 1;
+                }
+
+                // Draw the surrounding edges
+                let height = 0;
+                for (let i = 0; i < count; i++) {
+                    height = i % 2 === 0 ? height * -1 + 40 : height * -1;
+                    const { mid } = getParallelPoints(edge, height);
+                    p = this.paper
+                        .path(
+                            `M${start.x},${start.y}Q ${mid.x} ${mid.y}, ${end.x} ${end.y}`
+                        )
+                        .attr("stroke-width", strokeWidth)
+                        .attr("stroke", color);
+                    if (this.selected.includes(edge)) {
+                        p.glow({ color: "black", width: 20, opacity: 0.3 });
+                    }
+                }
+            }
         }
 
         draw() {
@@ -232,7 +286,7 @@
             this.drawEdges();
             this.nodes.forEach((node) => {
                 const { x, y, radius, color } = node;
-                const c = paper
+                const c = this.paper
                     .circle(x, y, radius)
                     .attr("fill", color)
                     .attr("stroke-width", 0);
