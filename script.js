@@ -1,7 +1,5 @@
-// TODO: parallel edges
+// TODO: parallel edge selection
 // TODO: directed toggle
-// TODO: eigenvalue/adjacency matrix
-// TODO: bipartite
 
 (() => {
     /**************************************************************************
@@ -211,6 +209,53 @@
             return node || edge;
         }
 
+        getSelectedDegree() {
+            const selectedNodes = this.nodes.filter((node) =>
+                this.selected.includes(node)
+            );
+            return this.edges.reduce((sum, edge) => {
+                selectedNodes.forEach((node) => {
+                    if (node === edge.start || node === edge.end) sum += 1;
+                });
+                return sum;
+            }, 0);
+        }
+
+        isBipartite() {
+            if (!this.edges.length) return "N/A";
+
+            const root = this.edges[0].start;
+            const stack = [root];
+            const colors = {
+                [root.id]: "red",
+            };
+            let count = 1;
+
+            while (stack.length) {
+                const node = stack.shift();
+
+                let neighbors = this.edges
+                    .filter(({ start, end }) => start === node || end === node)
+                    .map(({ start, end }) => {
+                        if (start === node) return end;
+                        return start;
+                    });
+
+                for (let neighbor of neighbors) {
+                    if (!colors[neighbor.id]) {
+                        colors[neighbor.id] =
+                            colors[node.id] === "red" ? "black" : "red";
+                        stack.push(neighbor);
+                        count++;
+                    } else if (colors[neighbor.id] === colors[node.id]) {
+                        return "No";
+                    }
+                }
+            }
+
+            return count === this.nodes.length ? "Yes" : "No";
+        }
+
         drawEdges() {
             // Draw loops
             const loops = this.edges.filter(({ start, end }) => start === end);
@@ -298,8 +343,12 @@
         }
 
         fillStats() {
-            $("#n").html(`n=${this.nodes.length}`);
-            $("#m").html(`m=${this.edges.length}`);
+            $("#n").html(`N: ${this.nodes.length}`);
+            $("#m").html(`M: ${this.edges.length}`);
+            $("#selected-degree").html(
+                `Selection Degree: ${this.getSelectedDegree()}`
+            );
+            $("#is-bipartite").html(`Bipartite: ${this.isBipartite()}`);
         }
     }
 

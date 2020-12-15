@@ -7,18 +7,20 @@
         <link rel="stylesheet" href="index.css" />
     </head>
     <body>
-        <ul>
+        <ul class="controls">
             <li id="save">Save</li>
             <li id="load">Load</li>
             <li id="help">Help</li>
         </ul>
         <div class="stats">
-            <div>
-                <span id="n"></span>
-                <span id="m"></span>
-            </div>
             <details>
-                <summary>More stats</summary>
+                <summary>STATS</summary>
+                <ul>
+                    <li id="n"></li>
+                    <li id="m"></li>
+                    <li id="selected-degree"></li>
+                    <li id="is-bipartite"></li>
+                </ul>
             </details>
         </div>
         <div id="paper"></div>

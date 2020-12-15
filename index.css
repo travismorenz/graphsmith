@@ -2,10 +2,7 @@ body {
     font-family: "Segoe UI", "Roboto", sans-serif;
 }
 
-header {
-}
-
-ul {
+.controls {
     list-style-type: none;
     font-size: 20px;
     border: 1px solid black;
@@ -18,27 +15,34 @@ ul {
     z-index: 100;
 }
 
-li {
+.controls li {
     padding: 15px 40px;
     transition: all 0.2s linear;
     cursor: pointer;
     user-select: none;
 }
 
-li:hover {
+.controls li:hover {
     background-color: lightgrey;
 }
 
 .stats {
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
     display: flex;
+    position: absolute;
+    z-index: 1000;
     align-items: center;
     flex-direction: column;
     user-select: none;
 }
 
-.stats span {
-    font-size: 30px;
-    font-weight: bold;
+.stats ul {
+    padding: 5px;
+    margin-top: 0px;
+    list-style-type: none;
+    font-size: 20px;
 }
 
 .stats span:first-child {
@@ -46,5 +50,6 @@ li:hover {
 }
 
 details {
-    text-decoration: underline;
+    font-size: 30px;
+    cursor: pointer;
 }
